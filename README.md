@@ -1,6 +1,6 @@
 # playbonehead.com
 
-The holding site for Bonehead, a pixel-art card game by Beautiful Distraction. One page of plain HTML with its CSS inline, no build step and no script. Hosted on Cloudflare Pages (project `playbonehead`), which deploys every push to `main`.
+The holding site for Bonehead, a pixel-art card game by Beautiful Distraction. One page of plain HTML with its CSS inline, no build step and no script. Hosted on Cloudflare Pages (project `playbonehead-com`, also at playbonehead-com.pages.dev; `playbonehead.com` and `www` are its custom domains), which deploys every push to `main`.
 
 ## Release state
 
