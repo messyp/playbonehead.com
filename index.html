@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bonehead</title>
+<meta name="description" content="Bonehead is a pixel-art card game: burn the pile, beat the crypt's strangest opponents, and don't be the last one holding cards. Coming soon to iPhone and iPad.">
+<meta name="theme-color" content="#4a0c42">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="canonical" href="https://playbonehead.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bonehead">
+<meta property="og:description" content="Don't be the last one holding cards. Coming soon to iPhone and iPad.">
+<meta property="og:url" content="https://playbonehead.com/">
+<meta property="og:image" content="https://playbonehead.com/assets/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="assets/fonts/pixelify-sans.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Pixelify Sans";font-weight:400 700;font-display:swap;src:url(assets/fonts/pixelify-sans.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(assets/fonts/atkinson-hyperlegible.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(assets/fonts/atkinson-hyperlegible-bold.woff2) format("woff2")}
+
+/* The game's palette (dist/js/art/palette.js) and its title theme. */
+:root{
+  --ink0:#07060d; --ink1:#110f1e; --ink2:#1b1830; --ink6:#8a82c0;
+  --bone0:#fff8ea; --bone1:#f1e5ca; --bone2:#d6c59f;
+  --gold1:#ffd45e; --gold2:#f59e2e; --gold3:#b95a1e; --red1:#ff5264;
+  --void-a:#86175a; --void-b:#4a0c42; --void-c:#1f0620;
+  --display:"Pixelify Sans","Courier New",monospace;
+  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --gl:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--void-c)}
+body{margin:0;min-height:100svh;display:grid;grid-template-rows:1fr auto;color:var(--bone1);font:400 18px/1.55 var(--body);-webkit-font-smoothing:antialiased;overflow-x:clip;
+  background:radial-gradient(75% 85% at 50% 42%,var(--void-a),var(--void-b) 58%,var(--void-c) 100%) fixed,var(--void-c)}
+/* A faint ordered dither over the void, like the game's swirl background. */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;
+  background:conic-gradient(#000 25%,transparent 0 50%,#000 0 75%,transparent 0) 0 0/4px 4px}
+img{display:block;max-width:100%}
+a{color:inherit}
+h1,p{margin:0}
+:focus-visible{outline:3px solid var(--gold1);outline-offset:4px;border-radius:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+
+/* Hero: one screen, wordmark centre stage, cards drifting past at different depths. */
+.hero{position:relative;isolation:isolate;display:grid;place-items:center;padding:clamp(120px,16vh,170px) var(--gr) clamp(120px,16vh,170px) var(--gl);overflow:hidden}
+.stack{position:relative;z-index:2;display:grid;justify-items:center;gap:clamp(20px,3.2vh,30px);text-align:center;width:100%;max-width:720px}
+h1{width:100%;display:grid;justify-items:center}
+.wordmark{width:min(708px,100%);height:auto;filter:drop-shadow(0 10px 0 rgb(7 6 13 / .28))}
+.tag{max-width:24ch;font:600 clamp(22px,3.1vw,32px)/1.15 var(--display);color:var(--bone0);letter-spacing:.01em;text-wrap:balance;text-shadow:0 3px 0 var(--ink0)}
+.sub{max-width:36ch;color:var(--bone2);font-size:clamp(17px,1.6vw,19px);text-wrap:pretty}
+.soon{display:inline-flex;align-items:center;gap:12px;margin-top:6px;padding:14px 22px 12px;
+  font:700 clamp(17px,1.8vw,20px)/1 var(--display);letter-spacing:.04em;color:var(--ink0);
+  background:linear-gradient(var(--gold1),var(--gold2));border:3px solid var(--ink0);border-radius:6px;box-shadow:0 5px 0 var(--ink0),inset 0 -4px 0 var(--gold3);transform:rotate(-1.5deg)}
+.soon img{width:26px;height:auto}
+
+.cards{position:absolute;inset:0;z-index:1;pointer-events:none}
+.card{position:absolute;left:calc(50% + var(--x) * 50%);top:calc(50% + var(--y) * 50%);width:calc(41px * var(--s) * var(--k,1));height:auto;
+  translate:-50% -50%;rotate:var(--r);animation:bob var(--t,7s) ease-in-out var(--d,0s) infinite alternate}
+.card.far{opacity:.45;filter:blur(3px)}
+.card.mid{opacity:.72;filter:blur(1.5px)}
+.card.near{filter:drop-shadow(8px 12px 0 rgb(7 6 13 / .38))}
+@keyframes bob{to{transform:translateY(-14px) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.card{animation:none}}
+/* On a phone the near cards sit above and below the words, and the far ones step back. */
+@media (max-width:1100px){.cards{--k:.78}}
+@media (max-width:700px){
+  .cards{--k:.62}
+  .card[data-p]{left:calc(50% + var(--px) * 50%);top:calc(50% + var(--py) * 50%)}
+  .card.hide-s{display:none}
+  .soon{gap:9px;padding:12px 15px 10px;font-size:15px;white-space:nowrap}
+  .soon img{width:20px}
+}
+
+footer{position:relative;z-index:2;padding:28px var(--gr) max(28px,env(safe-area-inset-bottom,0px)) var(--gl);border-top:2px solid rgb(7 6 13 / .45);background:rgb(17 15 30 / .55)}
+.foot{max-width:1100px;margin-inline:auto;display:flex;flex-wrap:wrap;gap:18px 32px;align-items:center;justify-content:space-between}
+.legal{display:grid;gap:4px;font-size:14px;color:var(--ink6);max-width:62ch}
+.legal b{color:var(--bone2);font-weight:700}
+.maker img{width:150px;height:auto;opacity:.9}
+.maker:hover img{opacity:1}
+</style>
+</head>
+<body>
+<main class="hero">
+  <div class="cards" aria-hidden="true">
+    <img class="card px far hide-s" src="assets/img/back.png" alt="" width="41" height="57" style="--x:-.3;--y:-.78;--s:2;--r:14deg;--t:9s">
+    <img class="card px far" src="assets/img/card-6-3.png" alt="" width="41" height="57" style="--x:.5;--y:.82;--s:2.1;--r:-18deg;--t:8s;--d:-3s">
+    <img class="card px far hide-s" src="assets/img/card-14-1.png" alt="" width="41" height="57" style="--x:-.62;--y:.02;--s:1.8;--r:-9deg;--t:10s;--d:-5s">
+    <img class="card px mid" src="assets/img/card-10-0.png" alt="" width="41" height="57" style="--x:.58;--y:-.74;--s:2.5;--r:-8deg;--t:7s;--d:-2s">
+    <img class="card px mid" src="assets/img/card-9-2.png" alt="" width="41" height="57" style="--x:-.56;--y:.78;--s:2.5;--r:13deg;--t:8s;--d:-4s">
+    <img class="card px mid hide-s" src="assets/img/card-2-0.png" alt="" width="41" height="57" style="--x:.36;--y:.6;--s:2.2;--r:7deg;--t:9s;--d:-1s">
+    <img class="card px near" data-p src="assets/img/back.png" alt="" width="41" height="57" style="--x:-.8;--y:-.38;--px:-.55;--py:-.74;--s:3.4;--r:12deg;--t:6s">
+    <img class="card px near" data-p src="assets/img/card-13-3.png" alt="" width="41" height="57" style="--x:.8;--y:-.1;--px:.58;--py:-.7;--s:3.6;--r:-10deg;--t:6.5s;--d:-2s">
+    <img class="card px near" data-p src="assets/img/card-8-1.png" alt="" width="41" height="57" style="--x:-.74;--y:.5;--px:-.6;--py:.8;--s:3.2;--r:-7deg;--t:7s;--d:-3s">
+    <img class="card px near" data-p src="assets/img/card-12-2.png" alt="" width="41" height="57" style="--x:.74;--y:.6;--px:.6;--py:.82;--s:3.2;--r:9deg;--t:6s;--d:-1s">
+  </div>
+  <div class="stack">
+    <h1><img class="wordmark px" src="assets/img/wordmark.png" alt="Bonehead" width="177" height="35"></h1>
+    <p class="tag">The backpacker card game, dealt by skeletons.</p>
+    <p class="sub">Burn the pile, beat the crypt's strangest opponents, and whatever you do, don't be the last one holding cards.</p>
+    <p class="soon"><img class="px" src="assets/img/skull.png" alt="" width="30" height="38">Coming soon to iPhone &amp; iPad</p>
+  </div>
+</main>
+<footer>
+  <div class="foot">
+    <div class="legal">
+      <p><b>© 2026 Beautiful Distraction.</b> iPhone and iPad are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <p>This site uses no cookies or analytics.</p>
+    </div>
+    <a class="maker" href="https://beautifuldistraction.com/"><img src="assets/beautiful-distraction.png" alt="Beautiful Distraction" width="213" height="89"></a>
+  </div>
+</footer>
+</body>
+</html>
